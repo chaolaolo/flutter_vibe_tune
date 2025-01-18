@@ -1,8 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:vibe_tune/ui/discovery/discovery.dart';
+import 'package:vibe_tune/ui/home/viewModel.dart';
+import 'package:vibe_tune/ui/now_playing/now_playing.dart';
 import 'package:vibe_tune/ui/profile/user.dart';
 import 'package:vibe_tune/ui/settings/settings.dart';
+
+import '../../data/models/song.dart';
 
 class VibeTuneApp extends StatelessWidget {
   const VibeTuneApp({super.key});
@@ -10,12 +14,13 @@ class VibeTuneApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Vibe Tune',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: const HomePage(),
     );
   }
 }
@@ -64,10 +69,178 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const HomeTabPage();
+  }
+}
+
+class HomeTabPage extends StatefulWidget {
+  const HomeTabPage({super.key});
+
+  @override
+  State<HomeTabPage> createState() => _HomeTabPageState();
+}
+
+class _HomeTabPageState extends State<HomeTabPage> {
+  List<Song> songs = [];
+  late VibeTuneAppViewModel _viewModel;
+
+  @override
+  void initState() {
+    _viewModel = VibeTuneAppViewModel();
+    _viewModel.loadSongs();
+    observeData();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Text("Home"),
+      body: getBody(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _viewModel.songStream.close();
+    super.dispose();
+  }
+
+  //getBody
+  Widget getBody() {
+    bool showLoading = songs.isEmpty;
+    if (showLoading) {
+      return getProgressBar();
+    } else {
+      return getListView();
+    }
+  }
+
+  //getListView
+  Widget getListView() {
+    return ListView.separated(
+      itemBuilder: (context, position) {
+        return getRow(position);
+      },
+      separatorBuilder: (context, index) {
+        return const Divider(
+          color: Colors.grey,
+          thickness: 1,
+          indent: 24,
+          endIndent: 24,
+        );
+      },
+      itemCount: songs.length,
+      shrinkWrap: true,
+    );
+  }
+
+  // getRow
+  Widget getRow(int index) {
+    return _SongItemSection(
+      parent: this,
+      song: songs[index],
+    );
+  }
+
+  //getProgressBar
+  Widget getProgressBar() {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  // observeData
+  void observeData() {
+    _viewModel.songStream.stream.listen((songList) {
+      setState(() {
+        songs.addAll(songList);
+      });
+    });
+  }
+
+  // showBottomSheet
+  void showBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return ClipRRect(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+            child: Container(
+              height: 300,
+              width: double.infinity,
+              color: Colors.grey[100],
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text("this is bottom sheet"),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Close this sheet"),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
+  // navigate
+  void navigate(Song song) {
+    Navigator.push(context, CupertinoPageRoute(builder: (context) {
+      return NowPlaying(
+        songs: songs,
+        playingSong: song,
+      );
+    }));
+  }
+}
+
+//_songItemSection
+class _SongItemSection extends StatelessWidget {
+  const _SongItemSection({
+    required this.parent,
+    required this.song,
+  });
+
+  final _HomeTabPageState parent;
+  final Song song;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.only(left: 24, right: 12),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: FadeInImage.assetNetwork(
+          width: 50,
+          height: 50,
+          placeholder: 'assets/songLoading.png',
+          fit: BoxFit.cover,
+          image: song.image,
+          imageErrorBuilder: (context, error, stackTrace) {
+            return Image.asset(
+              'assets/songLoading.png',
+              width: 50,
+              height: 50,
+              fit: BoxFit.contain,
+            );
+          },
+        ),
       ),
+      title: Text(song.title),
+      subtitle: Text(song.artist),
+      trailing: IconButton(
+        icon: const Icon(Icons.more_horiz_rounded),
+        onPressed: () {
+          parent.showBottomSheet(context);
+        },
+      ),
+      onTap: () {
+        parent.navigate(song);
+      },
     );
   }
 }
