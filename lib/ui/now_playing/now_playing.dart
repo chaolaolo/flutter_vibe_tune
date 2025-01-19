@@ -45,6 +45,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
   late Song _song;
   double _currentAnimationPosition = 0.0;
   bool _isShuffle = false;
+  late LoopMode _loopMode;
 
   @override
   void initState() {
@@ -55,6 +56,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
     _audioPlayerManager.init();
     _selectedItemIndex = widget.songs.indexOf(_song);
+    _loopMode = LoopMode.off;
   }
 
   @override
@@ -207,9 +209,9 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
             size: 36,
           ),
           MediaButtonControl(
-            function: null,
-            icon: Icons.repeat,
-            color: Colors.blueGrey,
+            function: _setLoopOption,
+            icon: repeatIcon(),
+            color: _getRepeatColor(),
             size: 24,
           ),
         ],
@@ -314,8 +316,10 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     if (_isShuffle) {
       var random = Random();
       _selectedItemIndex = random.nextInt(widget.songs.length);
-    } else {
+    } else if (_selectedItemIndex < widget.songs.length - 1) {
       ++_selectedItemIndex;
+    } else if (_loopMode == LoopMode.all && _selectedItemIndex == widget.songs.length - 1) {
+      _selectedItemIndex = 0;
     }
     if (_selectedItemIndex >= widget.songs.length) {
       _selectedItemIndex = _selectedItemIndex % widget.songs.length;
@@ -333,8 +337,10 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     if (_isShuffle) {
       var random = Random();
       _selectedItemIndex = random.nextInt(widget.songs.length);
-    } else {
+    } else if (_selectedItemIndex > 0) {
       --_selectedItemIndex;
+    } else if (_loopMode == LoopMode.all && _selectedItemIndex == 0) {
+      _selectedItemIndex = widget.songs.length - 1;
     }
     if (_selectedItemIndex < 0) {
       _selectedItemIndex = (-1 * _selectedItemIndex) % widget.songs.length;
@@ -355,6 +361,34 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
   void _setShuffle() {
     setState(() {
       _isShuffle = !_isShuffle;
+    });
+  }
+
+  //void repeatIcon() {}
+  IconData repeatIcon() {
+    return switch (_loopMode) {
+      LoopMode.one => Icons.repeat_one,
+      LoopMode.all => Icons.repeat_on,
+      _ => Icons.repeat,
+    };
+  }
+
+  // _getRepeatColor
+  Color? _getRepeatColor() {
+    return _loopMode == LoopMode.off ? Colors.blueGrey : Colors.blue;
+  }
+
+  // void _setLoopOption()
+  void _setLoopOption() {
+    if (_loopMode == LoopMode.off) {
+      _loopMode = LoopMode.one;
+    } else if (_loopMode == LoopMode.one) {
+      _loopMode = LoopMode.all;
+    } else {
+      _loopMode = LoopMode.off;
+    }
+    setState(() {
+      _audioPlayerManager.player.setLoopMode(_loopMode);
     });
   }
 
