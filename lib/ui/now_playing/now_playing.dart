@@ -1,6 +1,7 @@
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../../data/models/song.dart';
 import 'audio_player_manager.dart';
@@ -38,13 +39,17 @@ class NowPlayingPage extends StatefulWidget {
 class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProviderStateMixin {
   late AnimationController _imageAnimController;
   late AudioPlayerManager _audioPlayerManager;
+  late int _selectedItemIndex;
+  late Song _song;
 
   @override
   void initState() {
     super.initState();
+    _song = widget.playingSong;
     _imageAnimController = AnimationController(vsync: this, duration: const Duration(milliseconds: 12000));
-    _audioPlayerManager = AudioPlayerManager(songUrl: widget.playingSong.source);
+    _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
     _audioPlayerManager.init();
+    _selectedItemIndex = widget.songs.indexOf(_song);
   }
 
   @override
@@ -67,8 +72,11 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(
+                height: 20,
+              ),
               Text(
-                widget.playingSong.album,
+                _song.album,
                 style: TextStyle(color: Colors.black),
               ),
               const SizedBox(
@@ -87,7 +95,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
                       height: screenWidth - delta,
                       placeholder: 'assets/songLoading.png',
                       fit: BoxFit.cover,
-                      image: widget.playingSong.image,
+                      image: _song.image,
                       imageErrorBuilder: (context, error, stackTrace) {
                         return Image.asset(
                           'assets/songLoading.png',
@@ -110,14 +118,14 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
                       Column(
                         children: [
                           Text(
-                            widget.playingSong.title,
+                            _song.title,
                             style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(
                             height: 10,
                           ),
                           Text(
-                            widget.playingSong.artist,
+                            _song.artist,
                             style: TextStyle(color: Colors.grey),
                           ),
                         ],
@@ -155,21 +163,55 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     );
   }
 
+  @override
+  void dispose() {
+    _audioPlayerManager.dispose();
+    super.dispose();
+  }
+
+  // _mediaButtons
   Widget _mediaButtons() {
     return SizedBox(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          MediaButtonControl(function: null, icon: Icons.shuffle, color: Colors.grey, size: 24),
-          MediaButtonControl(function: null, icon: Icons.skip_previous, color: Colors.grey, size: 36),
-          MediaButtonControl(function: null, icon: Icons.play_arrow_sharp, color: Colors.grey, size: 46),
-          MediaButtonControl(function: null, icon: Icons.skip_next, color: Colors.grey, size: 36),
-          MediaButtonControl(function: null, icon: Icons.repeat, color: Colors.grey, size: 24),
+          MediaButtonControl(
+            function: null,
+            icon: Icons.shuffle,
+            color: Colors.grey,
+            size: 24,
+          ),
+          MediaButtonControl(
+            function: _setPreviousSong,
+            icon: Icons.skip_previous,
+            color: Colors.blue.shade400,
+            size: 36,
+          ),
+          // MediaButtonControl(
+          //   function: null,
+          //   icon: Icons.play_arrow,
+          //   color: Colors.grey,
+          //   size: 46,
+          // ),
+          _playerButton(),
+          MediaButtonControl(
+            function: _setNextSong,
+            icon: Icons.skip_next,
+            color: Colors.blue.shade400,
+            size: 36,
+          ),
+          MediaButtonControl(
+            function: null,
+            icon: Icons.repeat,
+            color: Colors.grey,
+            size: 24,
+          ),
         ],
       ),
     );
   }
 
+  // _progressBar
   StreamBuilder<DurationState> _progressBar() {
     return StreamBuilder<DurationState>(
       stream: _audioPlayerManager.durationState,
@@ -178,12 +220,93 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
         final progress = durationState?.progress ?? Duration.zero;
         final buffered = durationState?.buffered ?? Duration.zero;
         final total = durationState?.total ?? Duration.zero;
-        return ProgressBar(progress: progress, total: total);
+        return ProgressBar(
+          progress: progress,
+          total: total,
+          buffered: buffered,
+          onSeek: (duration) {
+            _audioPlayerManager.player.seek(duration);
+          },
+          baseBarColor: Colors.blue.shade50,
+          bufferedBarColor: Colors.blue.shade100,
+          progressBarColor: Colors.blue,
+          thumbColor: Colors.blue,
+          barHeight: 5,
+          timeLabelTextStyle: const TextStyle(
+            color: Colors.blueGrey,
+            fontWeight: FontWeight.w600,
+          ),
+        );
       },
     );
   }
+
+  // StreamBuilder  _playerButton
+  StreamBuilder<PlayerState> _playerButton() {
+    return StreamBuilder(
+        stream: _audioPlayerManager.player.playerStateStream,
+        builder: (context, snapshot) {
+          final playState = snapshot.data;
+          final processingState = playState?.processingState;
+          final playing = playState?.playing;
+          if (processingState == ProcessingState.loading || processingState == ProcessingState.buffering) {
+            return Container(
+              margin: EdgeInsets.all(6),
+              width: 48,
+              height: 48,
+              child: CircularProgressIndicator(
+                color: Colors.blue.shade700,
+              ),
+            );
+          } else if (playing != true) {
+            return MediaButtonControl(
+                function: () {
+                  _audioPlayerManager.player.play();
+                },
+                icon: Icons.play_arrow,
+                color: Colors.blue.shade700,
+                size: 48);
+          } else if (processingState != ProcessingState.completed) {
+            return MediaButtonControl(
+                function: () {
+                  _audioPlayerManager.player.pause();
+                },
+                icon: Icons.pause,
+                color: Colors.blue.shade700,
+                size: 48);
+          } else {
+            return MediaButtonControl(
+              function: () {
+                _audioPlayerManager.player.seek(Duration.zero); //quay lại từ đầu
+              },
+              icon: Icons.replay,
+              color: null,
+              size: 46,
+            );
+          }
+        });
+  }
+
+  void _setNextSong() {
+    ++_selectedItemIndex;
+    final nextSong = widget.songs[_selectedItemIndex];
+    _audioPlayerManager.updateSongUrl(nextSong.source);
+    setState(() {
+      _song = nextSong;
+    });
+  }
+
+  void _setPreviousSong() {
+    --_selectedItemIndex;
+    final nextSong = widget.songs[_selectedItemIndex];
+    _audioPlayerManager.updateSongUrl(nextSong.source);
+    setState(() {
+      _song = nextSong;
+    });
+  }
 }
 
+// class MediaButtonControl
 class MediaButtonControl extends StatefulWidget {
   const MediaButtonControl({super.key, required this.function, required this.icon, required this.color, required this.size});
 
@@ -196,6 +319,7 @@ class MediaButtonControl extends StatefulWidget {
   State<StatefulWidget> createState() => MediaButtonControlState();
 }
 
+// class MediaButtonControlState
 class MediaButtonControlState extends State<MediaButtonControl> {
   @override
   Widget build(BuildContext context) {
