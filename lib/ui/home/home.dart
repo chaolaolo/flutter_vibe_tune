@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:vibe_tune/ui/discovery/discovery.dart';
 import 'package:vibe_tune/ui/home/viewModel.dart';
+import 'package:vibe_tune/ui/now_playing/audio_player_manager.dart';
 import 'package:vibe_tune/ui/now_playing/now_playing.dart';
 import 'package:vibe_tune/ui/profile/user.dart';
 import 'package:vibe_tune/ui/settings/settings.dart';
@@ -43,13 +44,27 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text("Vibe Tune"),
+      navigationBar: CupertinoNavigationBar(
+        leading: IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.menu,
+              color: Colors.blueGrey,
+              size: 28,
+            )),
+        middle: const Text(
+          "Vibe Tune",
+          style: TextStyle(
+            color: Colors.blueGrey,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-      backgroundColor: Colors.redAccent,
+      backgroundColor: Colors.blue.shade200,
       child: CupertinoTabScaffold(
         tabBar: CupertinoTabBar(
-          activeColor: Colors.redAccent,
+          activeColor: Colors.blue.shade200,
           inactiveColor: Colors.white,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
@@ -105,6 +120,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   @override
   void dispose() {
     _viewModel.songStream.close();
+    AudioPlayerManager().dispose();
     super.dispose();
   }
 
@@ -126,8 +142,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
       },
       separatorBuilder: (context, index) {
         return const Divider(
-          color: Colors.grey,
-          thickness: 1,
+          color: Colors.blueGrey,
+          thickness: 0.4,
           indent: 24,
           endIndent: 24,
         );
@@ -239,7 +255,7 @@ class _SongItemSection extends StatelessWidget {
       ),
       subtitle: Text(song.artist),
       trailing: IconButton(
-        icon: const Icon(Icons.more_horiz_rounded),
+        icon: const Icon(Icons.more_horiz_rounded,color: Colors.blueGrey,),
         onPressed: () {
           parent.showBottomSheet(context);
         },

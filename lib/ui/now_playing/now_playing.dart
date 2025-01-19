@@ -53,8 +53,13 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     _song = widget.playingSong;
     _currentAnimationPosition = 0.0;
     _imageAnimController = AnimationController(vsync: this, duration: const Duration(milliseconds: 12000));
-    _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
-    _audioPlayerManager.init();
+    _audioPlayerManager = AudioPlayerManager();
+    if (_audioPlayerManager.songUrl.compareTo(_song.source) != 0) {
+      _audioPlayerManager.updateSongUrl(_song.source);
+      _audioPlayerManager.prepare(isNewSong: true);
+    } else {
+      _audioPlayerManager.prepare(isNewSong: false);
+    }
     _selectedItemIndex = widget.songs.indexOf(_song);
     _loopMode = LoopMode.off;
   }
@@ -66,12 +71,32 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     final radius = (screenWidth - delta) / 2;
 
     return CupertinoPageScaffold(
-      backgroundColor: Colors.redAccent,
+      backgroundColor: Colors.blue.shade200,
       navigationBar: CupertinoNavigationBar(
-        middle: const Text("Now Playing"),
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Icon(
+            size: 26,
+            CupertinoIcons.back, // Biểu tượng back
+            color: Colors.blueGrey, // Đổi màu nút back tại đây
+          ),
+        ),
+        middle: const Text(
+          "Now Playing",
+          style: TextStyle(
+            color: Colors.blueGrey,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         trailing: IconButton(
           onPressed: () {},
-          icon: Icon(Icons.more_horiz_outlined),
+          icon: Icon(
+            Icons.more_horiz_outlined,
+            color: Colors.blueGrey,
+          ),
         ),
       ),
       child: Scaffold(
@@ -172,7 +197,6 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
 
   @override
   void dispose() {
-    _audioPlayerManager.dispose();
     _imageAnimController.dispose();
     super.dispose();
   }
@@ -304,7 +328,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
                 _startRotateAnimation();
               },
               icon: Icons.replay,
-              color: null,
+              color: Colors.blue.shade700,
               size: 46,
             );
           }
