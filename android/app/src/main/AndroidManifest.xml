@@ -5,7 +5,7 @@
     <application
         android:label="vibe_tune"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/img">
         <activity
             android:name=".MainActivity"
             android:exported="true"
