@@ -41,11 +41,13 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
   late AudioPlayerManager _audioPlayerManager;
   late int _selectedItemIndex;
   late Song _song;
+  late double _currentAnimationPosition = 0.0;
 
   @override
   void initState() {
     super.initState();
     _song = widget.playingSong;
+    _currentAnimationPosition = 0.0;
     _imageAnimController = AnimationController(vsync: this, duration: const Duration(milliseconds: 12000));
     _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
     _audioPlayerManager.init();
@@ -82,7 +84,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
               const SizedBox(
                 height: 10,
               ),
-              const Text("_ ___ _"),
+              const Text("_ __ ___ __ _"),
               const SizedBox(
                 height: 20,
               ),
@@ -166,6 +168,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
   @override
   void dispose() {
     _audioPlayerManager.dispose();
+    _imageAnimController.dispose();
     super.dispose();
   }
 
@@ -178,7 +181,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
           MediaButtonControl(
             function: null,
             icon: Icons.shuffle,
-            color: Colors.grey,
+            color: Colors.blueGrey,
             size: 24,
           ),
           MediaButtonControl(
@@ -203,7 +206,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
           MediaButtonControl(
             function: null,
             icon: Icons.repeat,
-            color: Colors.grey,
+            color: Colors.blueGrey,
             size: 24,
           ),
         ],
@@ -250,6 +253,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
           final processingState = playState?.processingState;
           final playing = playState?.playing;
           if (processingState == ProcessingState.loading || processingState == ProcessingState.buffering) {
+            _pauseRotateAnimation();
             return Container(
               margin: EdgeInsets.all(6),
               width: 48,
@@ -262,22 +266,37 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
             return MediaButtonControl(
                 function: () {
                   _audioPlayerManager.player.play();
+                  _imageAnimController.forward(from: _currentAnimationPosition);
+                  _imageAnimController.repeat();
                 },
                 icon: Icons.play_arrow,
                 color: Colors.blue.shade700,
                 size: 48);
           } else if (processingState != ProcessingState.completed) {
+            _startRotateAnimation();
             return MediaButtonControl(
                 function: () {
                   _audioPlayerManager.player.pause();
+                  _imageAnimController.stop();
+                  _currentAnimationPosition = _imageAnimController.value;
+                  _pauseRotateAnimation();
                 },
                 icon: Icons.pause,
                 color: Colors.blue.shade700,
                 size: 48);
           } else {
+            if (processingState == ProcessingState.completed) {
+              _stopRotateAnimation();
+              _resetRotateAnimation();
+            }
             return MediaButtonControl(
               function: () {
+                _currentAnimationPosition = 0.0;
+                _imageAnimController.forward(from: _currentAnimationPosition);
+                _imageAnimController.repeat();
                 _audioPlayerManager.player.seek(Duration.zero); //quay lại từ đầu
+                _resetRotateAnimation();
+                _startRotateAnimation();
               },
               icon: Icons.replay,
               color: null,
@@ -291,6 +310,7 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     ++_selectedItemIndex;
     final nextSong = widget.songs[_selectedItemIndex];
     _audioPlayerManager.updateSongUrl(nextSong.source);
+    _resetRotateAnimation();
     setState(() {
       _song = nextSong;
     });
@@ -300,9 +320,29 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
     --_selectedItemIndex;
     final nextSong = widget.songs[_selectedItemIndex];
     _audioPlayerManager.updateSongUrl(nextSong.source);
+    _resetRotateAnimation();
     setState(() {
       _song = nextSong;
     });
+  }
+
+  void _startRotateAnimation() {
+    _imageAnimController.forward(from: _currentAnimationPosition);
+    _imageAnimController.repeat();
+  }
+
+  void _pauseRotateAnimation() {
+    _stopRotateAnimation();
+    _currentAnimationPosition = _imageAnimController.value;
+  }
+
+  void _stopRotateAnimation() {
+    _imageAnimController.stop();
+  }
+
+  void _resetRotateAnimation() {
+    _currentAnimationPosition = 0.0;
+    _imageAnimController.value = _currentAnimationPosition;
   }
 }
 
