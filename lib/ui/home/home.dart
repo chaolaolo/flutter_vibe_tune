@@ -46,15 +46,18 @@ class _HomePageState extends State<HomePage> {
       navigationBar: const CupertinoNavigationBar(
         middle: Text("Vibe Tune"),
       ),
+      backgroundColor: Colors.redAccent,
       child: CupertinoTabScaffold(
         tabBar: CupertinoTabBar(
+          activeColor: Colors.redAccent,
+          inactiveColor: Colors.white,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
             BottomNavigationBarItem(icon: Icon(Icons.my_library_music_rounded), label: "Discovery"),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
             BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
           ],
-          backgroundColor: Theme.of(context).colorScheme.onInverseSurface,
+          backgroundColor: Colors.black87,
         ),
         tabBuilder: (BuildContext context, int index) {
           return _tabs[index];
@@ -230,7 +233,10 @@ class _SongItemSection extends StatelessWidget {
           },
         ),
       ),
-      title: Text(song.title),
+      title: Text(
+        song.title,
+        style: TextStyle(color: Colors.black),
+      ),
       subtitle: Text(song.artist),
       trailing: IconButton(
         icon: const Icon(Icons.more_horiz_rounded),
