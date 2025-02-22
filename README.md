@@ -69,11 +69,11 @@
 
 ## 🤝 Đóng góp  
 
-Chúng tôi luôn chào đón đóng góp từ cộng đồng. Hãy:  
+Tôi luôn chào đón đóng góp từ cộng đồng. Hãy:  
 
 1. **Fork** repository.  
 2. Tạo nhánh mới để thêm tính năng hoặc sửa lỗi.  
-3. Gửi **Pull Request** để nhóm kiểm tra và tích hợp.  
+3. Gửi **Pull Request** để được kiểm tra và tích hợp.  
 
 ---
 ---
@@ -82,4 +82,4 @@ Chúng tôi luôn chào đón đóng góp từ cộng đồng. Hãy:
 
 Nếu bạn gặp khó khăn hoặc cần hỗ trợ, vui lòng tạo **Issue** trong repository hoặc gửi email đến **chaolaolo290604@gmail.com**.  
 
-Chúc bạn có trải nghiệm âm nhạc tuyệt vời cùng **Flutter Vibe Tune**! 🎶  
+Chúc các bạn có trải nghiệm âm nhạc tuyệt vời cùng **Flutter Vibe Tune**! 🎶  
